@@ -1,0 +1,28 @@
+<div class="container mt-5">
+  <h2 class="text-center">Student List</h2>
+  <div *ngIf="students.length > 0;"></div>
+  <table class="table table-bordered mt-4">
+    <thead>
+      <tr>
+        <th>ID</th>
+        <th>Name</th>
+        <th>Email</th>
+        <th>Course</th>
+        <th>Actions</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr *ngFor="let student of students">
+        <td>{{ student.id }}</td>
+        <td>{{ student.name }}</td>
+        <td>{{ student.email }}</td>
+        <td>{{ student.course }}</td>
+        <td>
+          <button class="btn btn-info" (click)="viewStudent(student.id)">View</button>
+          <button class="btn btn-warning" (click)="editStudent(student.id)">Edit</button>
+          <button class="btn btn-danger" (click)="deleteStudent(student.id)">Delete</button>
+        </td>
+      </tr>
+    </tbody>
+  </table>
+</div>
