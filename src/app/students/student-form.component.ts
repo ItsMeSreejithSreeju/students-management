@@ -1,8 +1,8 @@
 import { Component, OnInit } from '@angular/core';
 import { FormBuilder, FormGroup, Validators } from '@angular/forms';
 import { ActivatedRoute, Router } from '@angular/router';
-import { StudentService } from '../services/student.service';  // Update if necessary
-import { Student } from '../models/student.model';  // Update if necessary
+import { StudentService } from '../services/student.service';
+import { Student } from '../models/student.model';
 
 @Component({
   selector: 'app-student-form',
@@ -10,11 +10,12 @@ import { Student } from '../models/student.model';  // Update if necessary
   styleUrls: ['./student-form.component.css']
 })
 export class StudentFormComponent implements OnInit {
-  studentForm!: FormGroup;  // Declare the FormGroup
-  isEditMode = false;  // Flag to track edit mode
-  courses = ['Math', 'Science', 'History'];  // Example course options
-  grades = ['A', 'B', 'C', 'D', 'F'];  // Example grade options
-  studentId: number | undefined;  // For tracking the student ID when editing
+  studentForm!: FormGroup;
+  isEditMode = false;
+  courses = ['Math', 'Science', 'History'];
+  grades = ['A', 'B', 'C', 'D', 'F'];
+  studentId: number | undefined;
+  students: Student[] = [];
 
   constructor(
     private fb: FormBuilder,
@@ -31,47 +32,66 @@ export class StudentFormComponent implements OnInit {
       grade: ['', Validators.required]
     });
 
-    // If editing an existing student
+    this.loadStudents();
+
     const studentId = this.route.snapshot.paramMap.get('id');
     if (studentId) {
       this.isEditMode = true;
       this.studentId = +studentId;
-      this.loadStudentData(this.studentId);
     }
   }
 
-  loadStudentData(id: number): void {
-    this.studentService.getStudent(id).subscribe((student: Student | undefined) => {
-      if (student) { // Check if student is defined
-        this.studentForm.patchValue({
-          name: student.name,
-          email: student.email,
-          course: student.course,
-          grade: student.grade
-        });
-      } else {
-        // Handle the case where student is undefined, e.g., navigate away or show an error
-        console.error('Student not found');
+  loadStudents(): void {
+    this.studentService.getStudents().subscribe({
+      next: (students) => {
+        this.students = students;
+
+        if (this.isEditMode && this.studentId !== undefined) {
+          const student = this.students.find(s => s.id === this.studentId);
+          if (student) {
+            this.studentForm.patchValue({
+              name: student.name,
+              email: student.email,
+              course: student.course,
+              grade: student.grade
+            });
+          } else {
+            console.error('Student not found');
+            this.router.navigate(['/students']);
+          }
+        }
+      },
+      error: (err) => {
+        console.error('Error loading students', err);
         this.router.navigate(['/students']);
       }
     });
   }
-  
 
   onSubmit(): void {
     if (this.studentForm.valid) {
       const formValues = this.studentForm.value;
-      if (this.isEditMode) {
-        // Call the update service method
-        this.studentService.updateStudent(this.studentId!, formValues).subscribe(() => {
-          this.router.navigate(['/students']);
-        });
+
+      if (this.isEditMode && this.studentId !== undefined) {
+        // Update existing student
+        const index = this.students.findIndex(s => s.id === this.studentId);
+        if (index !== -1) {
+          this.students[index] = { id: this.studentId, ...formValues };
+        }
       } else {
-        // Call the add student service method
-        this.studentService.addStudent(formValues).subscribe(() => {
-          this.router.navigate(['/students']);
-        });
+        // Add new student
+        const newId = this.students.length ? Math.max(...this.students.map(s => s.id)) + 1 : 1;
+        const newStudent: Student = { id: newId, ...formValues };
+        this.students.push(newStudent);
       }
+
+      // Save the updated students array
+      this.studentService.saveStudents(this.students).subscribe({
+        next: () => {
+          this.router.navigate(['/students']);
+        },
+        error: (err) => console.error('Error saving students', err),
+      });
     }
   }
 }

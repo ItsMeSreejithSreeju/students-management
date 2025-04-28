@@ -30,7 +30,7 @@ export class LoginComponent implements OnInit {
 
       this.authService.login(username, password).subscribe(response => {
         if (response.success) {
-          console.log('Navigating to students page...');
+          console.log('');
 
           this.router.navigate(['/students']);
         } else {

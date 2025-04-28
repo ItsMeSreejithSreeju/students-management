@@ -19,23 +19,27 @@ export class StudentDetailsComponent implements OnInit {
   ) {}
 
   ngOnInit(): void {
-    const id = this.route.snapshot.paramMap.get('id');
-    if (id) {
-      this.studentService.getStudent(+id).subscribe(
-        (student) => {
-          if (student) {
-            this.student = student;
-          } else {
-            // Handle case where student is not found
-            this.router.navigate(['/students']);
-          }
-        },
-        (error) => {
-          console.error('Error fetching student data', error);
+    const idParam = this.route.snapshot.paramMap.get('id');
+    if (idParam) {
+      this.id = +idParam;
+      this.fetchStudent(this.id);
+    }
+  }
+
+  fetchStudent(id: number): void {
+    this.studentService.getStudents().subscribe({
+      next: (students) => {
+        this.student = students.find(s => s.id === id);
+        if (!this.student) {
+          console.error('Student not found');
           this.router.navigate(['/students']);
         }
-      );
-    }
+      },
+      error: (err) => {
+        console.error('Error fetching student list', err);
+        this.router.navigate(['/students']);
+      }
+    });
   }
 
   goBack(): void {
